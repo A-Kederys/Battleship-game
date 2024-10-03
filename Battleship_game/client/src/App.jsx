@@ -3,6 +3,7 @@ import axios from "axios";
 import io from 'socket.io-client';
 
 import styles from "./App.module.css";
+import Board from './components/Board/Board';
 
 let socket;
 
@@ -35,7 +36,10 @@ function App() {
 
   return (
     <>
-      <div>
+      <div className={styles.App}>
+        <Board />
+
+
         {array.map((movie, index) => (
           <div className={styles.container} key={index}>
             <p className={styles.movies}>{movie}</p>
