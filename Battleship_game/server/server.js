@@ -53,21 +53,43 @@ const generateSingleShipPosition = (boardSize, shipLength) => {
 
 const SHIP_LENGTH = 3;  
 
+// track connected users
+//const connectedUsers = new Map();
 
+const hasAlreadyBeenGuessed = (row, col, guessedTiles) => {
+  return guessedTiles.has(`${row},${col}`);
+
+};
+
+// socket connection handling
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
+
+  //connectedUsers.set(socket.id, { socket });
+  //console.log(`Active users: ${Array.from(connectedUsers.keys()).join(", ")}`);
 
   // generate a random position for the sip
   const shipPosition = generateSingleShipPosition(10, SHIP_LENGTH);
   const hitTiles = new Set(); // for tracking tiles
+  const guessedTiles = new Set();  // for tracking all the guessed tiles
 
-  // sending the random ship position to the client
+  // sending random ship position to the client
   socket.emit("shipPosition", shipPosition);
   console.log("Ship position sent to client:", shipPosition)
 
 
   socket.on("playerGuess", ({ row, col }) => {
-    console.log(`Player guessed position: Row ${row}, Col ${col}`);
+    console.log(`Player ${socket.id} guessed position: Row ${row}, Col ${col}`);
+
+    // Check if the tile has already been guessed
+    if (hasAlreadyBeenGuessed(row, col, guessedTiles)) {
+      console.log(`Player ${socket.id} already guessed Row ${row}, Col ${col}`);
+      socket.emit("alreadyGuessed", { row, col });
+      return;
+    }
+
+    // if not guessed, add to guessedTiles
+    guessedTiles.add(`${row},${col}`);
 
     const hitTile = shipPosition.some(tile => tile.row === row && tile.col === col);
 
@@ -82,7 +104,7 @@ io.on("connection", (socket) => {
 
       // checking if all the tiles of the ship have been hit
       if (hitTiles.size === shipPosition.length) {
-        console.log("You destroyed the ship!");
+        console.log(`${socket.id} destroyed the ship`);
         socket.emit("allShipsDestroyed"); // notifying client
       }
     } else {
@@ -95,6 +117,7 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("User disconnected", socket.id);
+    //connectedUsers.delete(socket.id);
   });
 });
 

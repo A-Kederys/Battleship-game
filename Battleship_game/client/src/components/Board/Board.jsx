@@ -18,8 +18,11 @@ function Board() {
     );
 
     const [shipPositions, setShipPositions] = useState([]); // Store ship positions from server
+    const [message, setMessage] = useState(""); // To display messages to the user
 
     useEffect(() => {
+        socket.connect();
+        
         // listen for the shipPosition event from the server
         socket.on("shipPosition", (shipCoordinates) => {
           console.log("Received ship position from server:", shipCoordinates);
@@ -43,6 +46,7 @@ function Board() {
             setBoardGrid((prevGrid) => {
                 const updatedBoardGrid = prevGrid.map((r) => [...r]);
                 updatedBoardGrid[row][col] = "H";
+                setMessage(`You hit! on ${colLabels[col]}${row + 1}`);
                 return updatedBoardGrid;
             });
         });
@@ -53,13 +57,20 @@ function Board() {
             setBoardGrid((prevGrid) => {
                 const updatedBoardGrid = prevGrid.map((r) => [...r]);
                 updatedBoardGrid[row][col] = "M";
+                setMessage(`You missed on  ${colLabels[col]}${row + 1}`);
                 return updatedBoardGrid;
             });
+        });
+
+        socket.on("alreadyGuessed", ({ row, col }) => {
+            console.log(`Tile at Row ${row}, Col ${col} has already been guessed.`);
+            setMessage(`You have already guessed ${colLabels[col]}${row + 1}. Try another tile.`);
         });
 
         // listening for all ships destroyed event from the server
         socket.on("allShipsDestroyed", () => {
             console.log("Congratulations! You have destroyed the ship!");
+            setMessage("Congratulations! You have destroyed the ship!");
         });
     
         // cleaning up the effect when the component unmounts
@@ -67,7 +78,10 @@ function Board() {
           socket.off("shipPosition");
           socket.off("hit");
           socket.off("miss");
+          socket.off("alreadyGuessed");
           socket.off("allShipsDestroyed");
+
+          socket.disconnect();
         };
       }, []);
 
@@ -92,24 +106,24 @@ function Board() {
              {/* grid */}
             <div className={styles.gridContainer}>
                 {boardGrid.map((row, rowIndex) => (
-                <div key={rowIndex} className={styles.row}>
-                    {/* row labels */}
-                    <div className={styles.rowLabel}>{rowLabels[rowIndex]}</div>
-                    {row.map((cell, colIndex) => (
-                    <div
-                        key={colIndex}
-                        className={styles.cell}
-                        onClick={() => {
-                            console.log(`Clicked on ${colLabels[colIndex]}${rowLabels[rowIndex]}`);
-                            handleTileClick(rowIndex, colIndex);
-                        }}
-                    >
-                        {cell}
+                    <div key={rowIndex} className={styles.row}>
+                        {/* row labels */}
+                        <div className={styles.rowLabel}>{rowLabels[rowIndex]}</div>
+                        {row.map((cell, colIndex) => (
+                            <div
+                                key={colIndex}
+                                className={styles.cell}
+                                onClick={() => {
+                                    handleTileClick(rowIndex, colIndex);
+                                }}
+                            >
+                            {cell}
+                        </div>
+                        ))}
                     </div>
-                    ))}
-                </div>
                 ))}
             </div>
+            <div className={styles.message}>{message}</div>
         </div>
     );
 }
