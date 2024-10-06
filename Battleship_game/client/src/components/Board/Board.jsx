@@ -17,14 +17,14 @@ function Board() {
         Array.from({ length: 10 }, () => Array.from({ length: 10 }, () => ""))
     );
 
-    const [shipPositions, setShipPositions] = useState([]); // Store ship positions from server
-    const [message, setMessage] = useState(""); // To display messages to the user
+    const [shipPositions, setShipPositions] = useState([]);
+    const [message, setMessage] = useState("");
 
     useEffect(() => {
         socket.connect();
         
-        // listen for the shipPosition event from the server
-        socket.on("shipPosition", (shipCoordinates) => {
+        // listen for the shipPositions event from the server
+        socket.on("shipPositions", (shipCoordinates) => {
           console.log("Received ship position from server:", shipCoordinates);
           setShipPositions(shipCoordinates);
     
@@ -32,9 +32,11 @@ function Board() {
           const updatedBoardGrid = boardGrid.map(row => [...row]);
     
           // placing the ship on the grid based on received coordinates
-          shipCoordinates.forEach(({ row, col }) => {
+          shipCoordinates.forEach((ship) => {
+            ship.forEach(({ row, col }) => {
             updatedBoardGrid[row][col] = "S";
-          });
+            });
+        });
     
           // updating the board grid state
           setBoardGrid(updatedBoardGrid);
@@ -45,7 +47,7 @@ function Board() {
             console.log(`Hit at position: Row ${row}, Col ${col}`);
             setBoardGrid((prevGrid) => {
                 const updatedBoardGrid = prevGrid.map((r) => [...r]);
-                updatedBoardGrid[row][col] = "H";
+                updatedBoardGrid[row][col] = "🚢";
                 setMessage(`You hit! on ${colLabels[col]}${row + 1}`);
                 return updatedBoardGrid;
             });
@@ -56,7 +58,7 @@ function Board() {
             console.log(`Miss at position: Row ${row}, Col ${col}`);
             setBoardGrid((prevGrid) => {
                 const updatedBoardGrid = prevGrid.map((r) => [...r]);
-                updatedBoardGrid[row][col] = "M";
+                updatedBoardGrid[row][col] = "❌";
                 setMessage(`You missed on  ${colLabels[col]}${row + 1}`);
                 return updatedBoardGrid;
             });
@@ -67,18 +69,25 @@ function Board() {
             setMessage(`You have already guessed ${colLabels[col]}${row + 1}. Try another tile.`);
         });
 
+        // listening for single ship destroyed event from the server
+        socket.on("shipDestroyed", (destroyedShip) => {
+            console.log("Destroyed ship at positions:", destroyedShip);
+            setMessage("You destroyed a ship!");
+          });
+        
         // listening for all ships destroyed event from the server
         socket.on("allShipsDestroyed", () => {
-            console.log("Congratulations! You have destroyed the ship!");
-            setMessage("Congratulations! You have destroyed the ship!");
+            console.log("Congratulations! You have destroyed all ships!");
+            setMessage("Congratulations! You have destroyed all ships!");
         });
     
         // cleaning up the effect when the component unmounts
         return () => {
-          socket.off("shipPosition");
+          socket.off("shipPositions");
           socket.off("hit");
           socket.off("miss");
           socket.off("alreadyGuessed");
+          socket.off("shipDestroyed");
           socket.off("allShipsDestroyed");
 
           socket.disconnect();

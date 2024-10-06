@@ -2,6 +2,7 @@ const express = require("express");
 const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
+const { placeAllShips } = require("./shipPlacement");
 
 const app = express();
 const server = http.createServer(app);
@@ -20,42 +21,6 @@ app.get("/api", (req, res) => {
   res.json({ movies: ["Interstellar", "Back to The Future", "Frequency"] });
 });
 
-
-// random ship placement
-const getRandomShipPosition = (boardSize, shipLength) => {
-  // place randomly  horizontally or vertically
-  const isHorizontal = Math.random() < 0.5;
-
-  let shipCoordinates = [];
-
-  if (isHorizontal) {
-    const startRow = Math.floor(Math.random() * boardSize); // random row between 0 and boardSize - 1
-    const startCol = Math.floor(Math.random() * (boardSize - shipLength + 1)); // column start position to fit the ship length
-
-    for (let i = 0; i < shipLength; i++) {
-      shipCoordinates.push({ row: startRow, col: startCol + i });
-    }
-  } else {
-    const startRow = Math.floor(Math.random() * (boardSize - shipLength + 1)); // row start position to fit the ship length
-    const startCol = Math.floor(Math.random() * boardSize); // random column between 0 and boardSize - 1
-
-    for (let i = 0; i < shipLength; i++) {
-      shipCoordinates.push({ row: startRow + i, col: startCol });
-    }
-  }
-
-  return shipCoordinates;
-};
-
-const generateSingleShipPosition = (boardSize, shipLength) => {
-  return getRandomShipPosition(boardSize, shipLength);
-};
-
-const SHIP_LENGTH = 3;  
-
-// track connected users
-//const connectedUsers = new Map();
-
 const hasAlreadyBeenGuessed = (row, col, guessedTiles) => {
   return guessedTiles.has(`${row},${col}`);
 
@@ -65,23 +30,18 @@ const hasAlreadyBeenGuessed = (row, col, guessedTiles) => {
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
 
-  //connectedUsers.set(socket.id, { socket });
-  //console.log(`Active users: ${Array.from(connectedUsers.keys()).join(", ")}`);
-
-  // generate a random position for the sip
-  const shipPosition = generateSingleShipPosition(10, SHIP_LENGTH);
+  const shipPositions = placeAllShips(10); 
   const hitTiles = new Set(); // for tracking tiles
-  const guessedTiles = new Set();  // for tracking all the guessed tiles
+  const guessedTiles = new Set();  // for tracking guessed tiles
 
-  // sending random ship position to the client
-  socket.emit("shipPosition", shipPosition);
-  console.log("Ship position sent to client:", shipPosition)
+  // sending ship position to the client
+  socket.emit("shipPosition", shipPositions);
+  console.log("Ship position sent to client:", shipPositions)
 
 
   socket.on("playerGuess", ({ row, col }) => {
     console.log(`Player ${socket.id} guessed position: Row ${row}, Col ${col}`);
 
-    // Check if the tile has already been guessed
     if (hasAlreadyBeenGuessed(row, col, guessedTiles)) {
       console.log(`Player ${socket.id} already guessed Row ${row}, Col ${col}`);
       socket.emit("alreadyGuessed", { row, col });
@@ -91,33 +51,48 @@ io.on("connection", (socket) => {
     // if not guessed, add to guessedTiles
     guessedTiles.add(`${row},${col}`);
 
-    const hitTile = shipPosition.some(tile => tile.row === row && tile.col === col);
+    let hitTile = false;
+    let destroyedShip = false;
 
-    const isHit = shipPosition.some(
-      (position) => position.row === row && position.col === col
-    );
+    // check against all ship positions
+    for (const ship of shipPositions) {
+      if (ship.some((tile) => tile.row === row && tile.col === col)) {
+        hitTile = true;
+        hitTiles.add(`${row},${col}`);
+        socket.emit("hit", { row, col });
+        console.log(`Hit at position: Row ${row}, Col ${col}`);
 
-    if (hitTile) {
-      hitTiles.add(`${row},${col}`);
-      socket.emit("hit", { row, col });
-      console.log(`Hit at position: Row ${row}, Col ${col}`);
-
-      // checking if all the tiles of the ship have been hit
-      if (hitTiles.size === shipPosition.length) {
-        console.log(`${socket.id} destroyed the ship`);
-        socket.emit("allShipsDestroyed"); // notifying client
+        // check if the entire ship has been destroyed
+        const allTilesHit = ship.every((tile) =>
+          hitTiles.has(`${tile.row},${tile.col}`)
+        );
+        if (allTilesHit) {
+          console.log(`Ship at ${JSON.stringify(ship)} destroyed`);
+          socket.emit("shipDestroyed", ship);
+          destroyedShip = true;
+        }
+        break;
       }
-    } else {
+    }
+
+    if (!hitTile) {
       socket.emit("miss", { row, col });
       console.log(`Miss at position: Row ${row}, Col ${col}`);
     }
-    
+
+    // check if all ships have been destroyed
+    const allShipsDestroyed = shipPositions.every((ship) =>
+      ship.every((tile) => hitTiles.has(`${tile.row},${tile.col}`))
+    );
+    if (allShipsDestroyed) {
+      console.log(`${socket.id} destroyed all ships`);
+      socket.emit("allShipsDestroyed");
+    }
   });
 
 
   socket.on("disconnect", () => {
     console.log("User disconnected", socket.id);
-    //connectedUsers.delete(socket.id);
   });
 });
 
