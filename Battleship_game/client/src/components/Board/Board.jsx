@@ -73,6 +73,16 @@ function Board() {
         socket.on("shipDestroyed", (destroyedShip) => {
             console.log("Destroyed ship at positions:", destroyedShip);
             setMessage("You destroyed a ship!");
+
+            setBoardGrid((prevGrid) => {
+                const updatedBoardGrid = prevGrid.map((r) => [...r]);
+        
+                destroyedShip.forEach(({ row, col }) => {
+                  updatedBoardGrid[row][col] = "☠️";
+                });
+        
+                return updatedBoardGrid;
+              });
           });
         
         // listening for all ships destroyed event from the server
