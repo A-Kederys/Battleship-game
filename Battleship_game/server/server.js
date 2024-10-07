@@ -35,7 +35,7 @@ io.on("connection", (socket) => {
   const guessedTiles = new Set();  // for tracking guessed tiles
 
   // sending ship position to the client
-  socket.emit("shipPosition", shipPositions);
+  socket.emit("shipPositions", shipPositions);
   console.log("Ship position sent to client:", shipPositions)
 
 

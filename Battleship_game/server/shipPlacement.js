@@ -72,6 +72,9 @@ const getRandomShipPosition = (boardSize, shipLength, existingShips) => {
       { length: 2, count: 3 },
       { length: 1, count: 3 },
     ];
+
+  // sorting so the largest ships would be placed first
+  shipsToPlace.sort((a, b) => b.length - a.length);
   
     const allShips = [];
   
