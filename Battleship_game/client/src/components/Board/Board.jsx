@@ -46,7 +46,6 @@ function Board() {
         // updating remaining tries when server sends the count
         socket.on("updateRemainingTries", (triesLeft) => {
             setRemainingTries(triesLeft);
-            setMessage(`Remaining shots: ${triesLeft}`);
         });
 
         // listening for hit results from the server
@@ -110,7 +109,7 @@ function Board() {
           socket.off("alreadyGuessed");
           socket.off("shipDestroyed");
           socket.off("updateRemainingTries");
-          socket.off("allShipsDestroyed");
+          socket.off("gameOver");
 
           socket.disconnect();
         };
@@ -159,6 +158,7 @@ function Board() {
                 ))}
             </div>
             <div className={styles.message}>{message}</div>
+            <div className={styles.message}>Remaining shots: {remainingTries}</div>
         </div>
     );
 }

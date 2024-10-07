@@ -34,6 +34,7 @@ io.on("connection", (socket) => {
   const hitTiles = new Set(); // for tracking tiles
   const guessedTiles = new Set();  // for tracking guessed tiles
   let remainingTries = 25;
+  let gameOver = false;
 
   // sending ship position to the client
   socket.emit("shipPositions", shipPositions);
@@ -46,6 +47,10 @@ io.on("connection", (socket) => {
   socket.on("playerGuess", ({ row, col }) => {
     console.log(`Player ${socket.id} guessed position: Row ${row}, Col ${col}`);
 
+    if (gameOver) {
+      return;
+    }
+
     if (hasAlreadyBeenGuessed(row, col, guessedTiles)) {
       console.log(`Player ${socket.id} already guessed Row ${row}, Col ${col}`);
       socket.emit("alreadyGuessed", { row, col });
@@ -54,7 +59,6 @@ io.on("connection", (socket) => {
 
     // if not guessed, add to guessedTiles and reduce remaining tries
     guessedTiles.add(`${row},${col}`);
-    remainingTries -= 1;
 
     let hitTile = false;
     let destroyedShip = false;
@@ -81,6 +85,7 @@ io.on("connection", (socket) => {
     }
 
     if (!hitTile) {
+      remainingTries -= 1;
       socket.emit("miss", { row, col });
       console.log(`Miss at position: Row ${row}, Col ${col}`);
     }
@@ -96,6 +101,7 @@ io.on("connection", (socket) => {
     // check if the game is over due to either condition
     if (allShipsDestroyed || remainingTries <= 0) {
       console.log(`${socket.id} game over!`);
+      gameOver = true;
       socket.emit("gameOver", { allShipsDestroyed });
     }
 
