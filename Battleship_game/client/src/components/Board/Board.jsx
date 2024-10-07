@@ -19,6 +19,7 @@ function Board() {
 
     const [shipPositions, setShipPositions] = useState([]);
     const [message, setMessage] = useState("");
+    const [remainingTries, setRemainingTries] = useState(25);
 
     useEffect(() => {
         socket.connect();
@@ -40,6 +41,12 @@ function Board() {
     
           // updating the board grid state
           setBoardGrid(updatedBoardGrid);
+        });
+
+        // updating remaining tries when server sends the count
+        socket.on("updateRemainingTries", (triesLeft) => {
+            setRemainingTries(triesLeft);
+            setMessage(`Remaining shots: ${triesLeft}`);
         });
 
         // listening for hit results from the server
@@ -85,10 +92,14 @@ function Board() {
               });
           });
         
-        // listening for all ships destroyed event from the server
-        socket.on("allShipsDestroyed", () => {
-            console.log("Congratulations! You have destroyed all ships!");
-            setMessage("Congratulations! You have destroyed all ships!");
+        // listening for game over event from the server
+        socket.on("gameOver", ({ allShipsDestroyed }) => {
+            console.log("Game Over!");
+            if (allShipsDestroyed) {
+                setMessage("Congratulations! You have destroyed all ships!");
+            } else {
+                setMessage("No remaining tries left. Game Over!");
+            }
         });
     
         // cleaning up the effect when the component unmounts
@@ -98,6 +109,7 @@ function Board() {
           socket.off("miss");
           socket.off("alreadyGuessed");
           socket.off("shipDestroyed");
+          socket.off("updateRemainingTries");
           socket.off("allShipsDestroyed");
 
           socket.disconnect();
@@ -105,8 +117,12 @@ function Board() {
       }, []);
 
     const handleTileClick = (rowIndex, colIndex) => {
-        console.log(`Clicked on ${colLabels[colIndex]}${rowLabels[rowIndex]}`);
-        socket.emit("playerGuess", { row: rowIndex, col: colIndex }); // send guess to server
+        if (remainingTries > 0) {
+            console.log(`Clicked on ${colLabels[colIndex]}${rowLabels[rowIndex]}`);
+            socket.emit("playerGuess", { row: rowIndex, col: colIndex }); // send guess to server
+          } else {
+            setMessage("No remaining shots left. You cannot make any more guesses.");
+          }
     };
 
 

@@ -33,10 +33,14 @@ io.on("connection", (socket) => {
   const shipPositions = placeAllShips(10); 
   const hitTiles = new Set(); // for tracking tiles
   const guessedTiles = new Set();  // for tracking guessed tiles
+  let remainingTries = 25;
 
   // sending ship position to the client
   socket.emit("shipPositions", shipPositions);
   console.log("Ship position sent to client:", shipPositions)
+
+  // sending remaining tries to the client
+  socket.emit("updateRemainingTries", remainingTries);
 
 
   socket.on("playerGuess", ({ row, col }) => {
@@ -48,8 +52,9 @@ io.on("connection", (socket) => {
       return;
     }
 
-    // if not guessed, add to guessedTiles
+    // if not guessed, add to guessedTiles and reduce remaining tries
     guessedTiles.add(`${row},${col}`);
+    remainingTries -= 1;
 
     let hitTile = false;
     let destroyedShip = false;
@@ -80,19 +85,23 @@ io.on("connection", (socket) => {
       console.log(`Miss at position: Row ${row}, Col ${col}`);
     }
 
+    // emit remaining tries to the client after each guess
+    socket.emit("updateRemainingTries", remainingTries);
+
     // check if all ships have been destroyed
     const allShipsDestroyed = shipPositions.every((ship) =>
       ship.every((tile) => hitTiles.has(`${tile.row},${tile.col}`))
     );
-    if (allShipsDestroyed) {
-      console.log(`${socket.id} destroyed all ships`);
-      socket.emit("allShipsDestroyed");
+
+    // check if the game is over due to either condition
+    if (allShipsDestroyed || remainingTries <= 0) {
+      console.log(`${socket.id} game over!`);
+      socket.emit("gameOver", { allShipsDestroyed });
     }
-  });
 
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected", socket.id);
+    socket.on("disconnect", () => {
+      console.log("User disconnected", socket.id);
+    });
   });
 });
 
