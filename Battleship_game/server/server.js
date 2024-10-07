@@ -36,15 +36,20 @@ io.on("connection", (socket) => {
   let remainingTries = 25;
   let gameOver = false;
 
-  // sending ship position to the client
-  socket.emit("shipPositions", shipPositions);
-  console.log("Ship position sent to client:", shipPositions)
-
-  // sending remaining tries to the client
-  socket.emit("updateRemainingTries", remainingTries);
-
+  socket.on("gameStart", () => {
+    gameStarted = true;
+    socket.emit("gameStarted", { shipPositions });
+    console.log("Game started for:", socket.id);
+    console.log("Ship position sent to client:", shipPositions)
+    socket.emit("updateRemainingTries", remainingTries);
+  });
 
   socket.on("playerGuess", ({ row, col }) => {
+    if (!gameStarted) {
+      console.log("Game hasn't started yet!");
+      return;
+    }
+
     console.log(`Player ${socket.id} guessed position: Row ${row}, Col ${col}`);
 
     if (gameOver) {

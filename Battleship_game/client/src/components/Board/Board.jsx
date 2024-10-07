@@ -20,24 +20,25 @@ function Board() {
     const [shipPositions, setShipPositions] = useState([]);
     const [message, setMessage] = useState("");
     const [remainingTries, setRemainingTries] = useState(25);
+    const [gameStarted, setGameStarted] = useState(false);
 
     useEffect(() => {
         socket.connect();
         
         // listen for the shipPositions event from the server
-        socket.on("shipPositions", (shipCoordinates) => {
-          console.log("Received ship position from server:", shipCoordinates);
-          setShipPositions(shipCoordinates);
+        socket.on("gameStarted", ({ shipPositions }) => {
+          console.log("Received ship position from server:", shipPositions);
+          setShipPositions(shipPositions);
     
           // creating a new grid to update state immutably
           const updatedBoardGrid = boardGrid.map(row => [...row]);
     
           // placing the ship on the grid based on received coordinates
-          shipCoordinates.forEach((ship) => {
+          shipPositions.forEach((ship) => {
             ship.forEach(({ row, col }) => {
             updatedBoardGrid[row][col] = "S";
-            });
-        });
+             });
+          });
     
           // updating the board grid state
           setBoardGrid(updatedBoardGrid);
@@ -116,17 +117,27 @@ function Board() {
       }, []);
 
     const handleTileClick = (rowIndex, colIndex) => {
-        if (remainingTries > 0) {
+        if (remainingTries > 0 && gameStarted) {
             console.log(`Clicked on ${colLabels[colIndex]}${rowLabels[rowIndex]}`);
             socket.emit("playerGuess", { row: rowIndex, col: colIndex }); // send guess to server
           } else {
-            setMessage("No remaining shots left. You cannot make any more guesses.");
-          }
+            if (!gameStarted) {
+                setMessage("Start the game first!");
+            } else {
+                setMessage("No remaining shots left. You cannot make any more guesses.");
+            }
+        }
+    };
+
+    const startGame = () => {
+        socket.emit("gameStart");
+        setGameStarted(true);
     };
 
 
     return (
         <div className={styles.boardContainer}>
+            <button onClick={startGame}>Start Game</button>
             {/* column labels */}
             <div className={styles.colLabels}>
                 <div className={styles.emptyCorner}></div>
