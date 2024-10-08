@@ -17,10 +17,6 @@ const io = new Server(server, {
 
 app.use(cors());
 
-app.get("/api", (req, res) => {
-  res.json({ movies: ["Interstellar", "Back to The Future", "Frequency"] });
-});
-
 const hasAlreadyBeenGuessed = (row, col, guessedTiles) => {
   return guessedTiles.has(`${row},${col}`);
 

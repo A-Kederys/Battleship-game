@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
 import styles from "./Board.module.css";
-import io from "socket.io-client";
-
-// connecting to erver
-const socket = io("http://localhost:8080");
+import { useSocket } from "../../SocketContext";
 
 function Board() {
+    const socket = useSocket();
 
     const rowLabels = Array.from({ length: 10 }, (_, index) => index + 1); //1 to 10
     const colLabels = Array.from({ length: 10 }, (_, index) =>
@@ -31,7 +29,6 @@ function Board() {
 
 
     useEffect(() => {
-        socket.connect();
         
         // listen for the shipPositions event from the server
         socket.on("gameStarted", ({ shipPositions }) => {
@@ -125,11 +122,7 @@ function Board() {
             setGameStarted(false);
             setGameOver(true);
           });
-    
-        // cleaning up the effect when the component unmounts
-        return () => {
-          socket.disconnect();
-        };
+          
       }, []);
 
       const handleTileClick = (row, col) => {
