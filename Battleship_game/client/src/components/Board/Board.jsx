@@ -21,6 +21,8 @@ function Board() {
     const [message, setMessage] = useState("");
     const [remainingTries, setRemainingTries] = useState(25);
     const [gameStarted, setGameStarted] = useState(false);
+    const [gameOver, setGameOver] = useState(false);
+
 
     useEffect(() => {
         socket.connect();
@@ -29,6 +31,7 @@ function Board() {
         socket.on("gameStarted", ({ shipPositions }) => {
           console.log("Received ship position from server:", shipPositions);
           setShipPositions(shipPositions);
+          setMessage("Game has started. Make your shot!");
     
           // creating a new grid to update state immutably
           const updatedBoardGrid = boardGrid.map(row => [...row]);
@@ -94,50 +97,58 @@ function Board() {
         
         // listening for game over event from the server
         socket.on("gameOver", ({ allShipsDestroyed }) => {
-            console.log("Game Over!");
-            if (allShipsDestroyed) {
-                setMessage("Congratulations! You have destroyed all ships!");
-            } else {
-                setMessage("No remaining tries left. Game Over!");
-            }
-        });
+            setMessage(
+              allShipsDestroyed
+                ? "Congratulations! You destroyed all ships!"
+                : "No remaining tries left. Game Over!"
+            );
+            setGameStarted(false);
+            setGameOver(true);
+          });
     
         // cleaning up the effect when the component unmounts
         return () => {
-          socket.off("shipPositions");
-          socket.off("hit");
-          socket.off("miss");
-          socket.off("alreadyGuessed");
-          socket.off("shipDestroyed");
-          socket.off("updateRemainingTries");
-          socket.off("gameOver");
-
           socket.disconnect();
         };
       }, []);
 
-    const handleTileClick = (rowIndex, colIndex) => {
-        if (remainingTries > 0 && gameStarted) {
-            console.log(`Clicked on ${colLabels[colIndex]}${rowLabels[rowIndex]}`);
-            socket.emit("playerGuess", { row: rowIndex, col: colIndex }); // send guess to server
-          } else {
-            if (!gameStarted) {
-                setMessage("Start the game first!");
-            } else {
-                setMessage("No remaining shots left. You cannot make any more guesses.");
-            }
+      const handleTileClick = (row, col) => {
+        if (!gameStarted) {
+          setMessage("Start the game first!");
+          return;
         }
-    };
+        console.log(`Clicked on ${colLabels[row]}${rowLabels[col]}`);
+        socket.emit("playerGuess", { row, col }); // send guess to server
+      };
 
-    const startGame = () => {
+      const handleStartGame = () => {
         socket.emit("gameStart");
         setGameStarted(true);
-    };
+        setGameOver(false);
+        setMessage("Game started!");
+      };
+    
+      const handleRestartGame = () => {
+        socket.emit("restartGame");
+        setBoardGrid(Array.from({ length: 10 }, () => Array.from({ length: 10 }, () => "")));
+        setMessage("Game restarted! Make your shot.");
+        setGameStarted(true);
+        setGameOver(false);
+      };
 
 
     return (
         <div className={styles.boardContainer}>
-            <button onClick={startGame}>Start Game</button>
+           {!gameStarted && !gameOver && (
+                <button onClick={handleStartGame}>
+                    Start Game
+                </button>
+            )}
+            {(gameStarted || gameOver) && (
+                <button onClick={handleRestartGame}>
+                    {gameOver ? "Play Again" : "Restart Game"}
+                </button>
+            )}
             {/* column labels */}
             <div className={styles.colLabels}>
                 <div className={styles.emptyCorner}></div>
@@ -156,7 +167,7 @@ function Board() {
                         <div className={styles.rowLabel}>{rowLabels[rowIndex]}</div>
                         {row.map((cell, colIndex) => (
                             <div
-                                key={colIndex}
+                            key={colIndex}
                                 className={styles.cell}
                                 onClick={() => {
                                     handleTileClick(rowIndex, colIndex);

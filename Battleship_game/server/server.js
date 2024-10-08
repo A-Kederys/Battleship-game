@@ -26,21 +26,41 @@ const hasAlreadyBeenGuessed = (row, col, guessedTiles) => {
 
 };
 
+// Function to initialize or reset the game state
+const initializeGame = () => {
+  const shipPositions = placeAllShips(10);
+  const hitTiles = new Set(); // for tracking hits
+  const guessedTiles = new Set(); // for tracking guesses
+  let remainingTries = 25;
+  let gameOver = false;
+
+  return { shipPositions, hitTiles, guessedTiles, remainingTries, gameOver };
+};
+
 // socket connection handling
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
 
-  const shipPositions = placeAllShips(10); 
-  const hitTiles = new Set(); // for tracking tiles
-  const guessedTiles = new Set();  // for tracking guessed tiles
-  let remainingTries = 25;
-  let gameOver = false;
+  // Initialize the game state for the player
+  let { shipPositions, hitTiles, guessedTiles, remainingTries, gameOver } =
+    initializeGame();
+
+  let gameStarted = false;
 
   socket.on("gameStart", () => {
     gameStarted = true;
     socket.emit("gameStarted", { shipPositions });
-    console.log("Game started for:", socket.id);
     console.log("Ship position sent to client:", shipPositions)
+    console.log("Game started for:", socket.id);
+    socket.emit("updateRemainingTries", remainingTries);
+  });
+
+  socket.on("restartGame", () => {
+    ({ shipPositions, hitTiles, guessedTiles, remainingTries, gameOver } =
+      initializeGame()); // resetting game state
+    socket.emit("gameStarted", { shipPositions });
+    console.log("Ship position sent to client:", shipPositions)
+    console.log("Game restarted for:", socket.id);
     socket.emit("updateRemainingTries", remainingTries);
   });
 
@@ -62,7 +82,7 @@ io.on("connection", (socket) => {
       return;
     }
 
-    // if not guessed, add to guessedTiles and reduce remaining tries
+    // if not guessed, add to guessedTiles
     guessedTiles.add(`${row},${col}`);
 
     let hitTile = false;
