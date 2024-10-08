@@ -92,6 +92,66 @@
     animation: wave 0.5s ease-in-out forwards;
 }
 
+/* miss */
+@keyframes distortion {
+    0% {
+        transform: scale(1);
+        background-color: #6cb2f0;
+    }
+    50% {
+        transform: scale(1.1) skew(10deg, 10deg);
+        background-color: #ffcccc;
+    }
+    100% {
+        transform: scale(1) skew(0deg, 0deg);
+        background-color: #6cb2f0;
+    }
+}
+
+.distorted {
+    animation: distortion 0.5s ease-in-out forwards;
+}
+
+/* hit */
+@keyframes hit {
+    0% {
+        transform: scale(1);
+        background-color: #6cb2f0;
+    }
+    50% {
+        transform: scale(1.1);
+        background-color: #b3ffb3;
+    }
+    100% {
+        transform: scale(1);
+        background-color: #6cb2f0;
+    }
+}
+
+.hitEffect {
+    animation: hit 0.5s ease-in-out forwards;
+}
+
+/* ship destruction */
+@keyframes shipDestroyed {
+    0% {
+        transform: scale(1);
+        background-color: #6cb2f0;
+    }
+    50% {
+        transform: scale(1.2);
+        background-color: #b3ffb3;
+    }
+    100% {
+        transform: scale(1);
+        background-color: #6cb2f0;
+    }
+}
+
+.shipDestroyedEffect {
+    animation: shipDestroyed 1s ease-in-out forwards;
+}
+
 @media screen and (max-width: 830px){
     .colLabel, .emptyCorner, .rowLabel, .cell {
         width: 30px;

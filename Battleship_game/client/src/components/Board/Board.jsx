@@ -25,6 +25,9 @@ function Board() {
     const [wavingCells, setWavingCells] = useState([]);
     const [isButtonActive, setIsButtonActive] = useState(true);
     const [cellsClickable, setCellsClickable] = useState(true);
+    const [missedCells, setMissedCells] = useState([]);
+    const [hitCells, setHitCells] = useState([]);
+    const [destroyedShipCells, setDestroyedShipCells] = useState([]);
 
 
     useEffect(() => {
@@ -62,6 +65,9 @@ function Board() {
                 const updatedBoardGrid = prevGrid.map((r) => [...r]);
                 updatedBoardGrid[row][col] = "🚢";
                 setMessage(`You hit! on ${colLabels[col]}${row + 1}`);
+
+                // for animation
+                setHitCells(prev => [...prev, `${row}-${col}`]);
                 return updatedBoardGrid;
             });
         });
@@ -73,6 +79,9 @@ function Board() {
                 const updatedBoardGrid = prevGrid.map((r) => [...r]);
                 updatedBoardGrid[row][col] = "❌";
                 setMessage(`You missed on  ${colLabels[col]}${row + 1}`);
+
+                // for animation
+                setMissedCells(prev => [...prev, `${row}-${col}`]);
                 return updatedBoardGrid;
             });
         });
@@ -87,6 +96,10 @@ function Board() {
             console.log("Destroyed ship at positions:", destroyedShip);
             setMessage("You destroyed a ship!");
 
+            // for animation
+            const newDestroyedCells = destroyedShip.map(({ row, col }) => `${row}-${col}`);
+            setDestroyedShipCells(newDestroyedCells);
+
             setBoardGrid((prevGrid) => {
                 const updatedBoardGrid = prevGrid.map((r) => [...r]);
         
@@ -96,6 +109,10 @@ function Board() {
         
                 return updatedBoardGrid;
               });
+
+              setTimeout(() => {
+                setDestroyedShipCells([]);
+              }, 800);
           });
         
         // listening for game over event from the server
@@ -212,10 +229,18 @@ function Board() {
                         <div className={styles.rowLabel}>{rowLabels[rowIndex]}</div>
                         {row.map((cell, colIndex) => {
                             const isWaving = wavingCells.includes(`${rowIndex}-${colIndex}`);
+                            const isMissed = missedCells.includes(`${rowIndex}-${colIndex}`);
+                            const isHit = hitCells.includes(`${rowIndex}-${colIndex}`);
+                            const isDestroyed = destroyedShipCells.includes(`${rowIndex}-${colIndex}`);
                             return (
                                 <div
                                     key={colIndex}
-                                    className={`${styles.cell} ${isWaving ? styles.waving : ''}`}
+                                    className={`${styles.cell} 
+                                        ${isWaving ? styles.waving : ''} 
+                                        ${isMissed ? styles.distorted : ''} 
+                                        ${isHit ? styles.hitEffect : ''}
+                                        ${isDestroyed ? styles.shipDestroyedEffect : ''}`
+                                    }
                                     onClick={() => {
                                         handleTileClick(rowIndex, colIndex);
                                     }}
