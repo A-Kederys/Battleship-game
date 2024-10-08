@@ -1,10 +1,79 @@
 @import "../../variables.css";
 
+* {
+    background-color: var(--color-text);
+    overflow: hidden;
+}
+
+.title {
+    color: var(--color-primary);
+    display: flex;
+    margin: 24px auto;
+    width: 90%;
+    border-bottom: 2px solid var(--color-primary);
+}
+
+/* menu */
+
+.boardWrapper {
+    display: flex;
+    margin: 54px auto;
+    width: 90%;
+    justify-content: space-between;
+    gap: 30px
+}
+
+.controlsContainer {
+    margin-right: 60px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 200px;
+    gap: 20px;
+}
+
+.controlsContainer button {
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    border-radius: 2px;
+    background-color: var(--color-primary);
+    color: var(--color-text);
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.controlsContainer button:disabled {
+    background-color: #0a2049;
+    cursor: not-allowed;
+    color: var(--color-primary);
+}
+
+.controlsContainer button:hover {
+    background-color: var(--color-secondary);
+    color: var(--color-primary);
+    box-shadow: 0 0 5px var(--color-primary), 0 0 10px var(--color-primary);
+}
+
+
+.controlsContainer p, .message {
+    color: var(--color-primary);
+    font-weight: 500;
+    font-size: 25px;
+}
+
+.message {
+    margin-right: auto;
+    max-width: 400px;
+}
+
+/* board */
+
 .boardContainer {
-    margin: 42px 0;
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
 }
 
 .colLabels {
@@ -20,12 +89,12 @@
     justify-content: center;
     align-items: center;
     font-weight: bold;
-    color: #333;
-    border: 1px solid #ddd;
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
 }
 
 .emptyCorner {
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-primary);
     width: 40px;
     height: 40px;
 }
@@ -41,21 +110,21 @@
 }
 
 .rowLabel {
-    border: 1px solid #ddd;
+    border: 1px solid var(--color-primary);
     width: 40px;
     height: 40px;
     display: flex;
     justify-content: center;
     align-items: center;
     font-weight: bold;
-    color: #333;
+    color: var(--color-primary);
 }
 
 .cell {
     width: 40px;
     height: 40px;
-    border: 1px solid #ddd;
-    background-color: #6cb2f0;
+    border: 1px solid var(--color-text);
+    background-color: var(--color-primary);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -64,27 +133,21 @@
   }
 
 .cell:hover {
-     background-color: #b3d5f3;
-}
-
-.message {
-    color: #6cb2f0;
-    font-weight: 500;
-    font-size: 25px;
+     background-color: var(--color-secondary);
 }
 
 @keyframes wave {
     0% {
         transform: scale(1);
-        background-color: #6cb2f0;
+        background-color: var(--color-primary);
     }
     50% {
         transform: scale(1.2);
-        background-color: #4ea3d1;
+        background-color: var(--coloar-secondary);
     }
     100% {
         transform: scale(1);
-        background-color: #6cb2f0;
+        background-color: var(--color-primary);
     }
 }
 
@@ -96,15 +159,15 @@
 @keyframes distortion {
     0% {
         transform: scale(1);
-        background-color: #6cb2f0;
+        background-color: var(--color-primary);
     }
     50% {
-        transform: scale(1.1) skew(10deg, 10deg);
+        transform: scale(1.1) skew(5deg, 5deg);
         background-color: #ffcccc;
     }
     100% {
         transform: scale(1) skew(0deg, 0deg);
-        background-color: #6cb2f0;
+        background-color: var(--color-primary);
     }
 }
 
@@ -116,15 +179,15 @@
 @keyframes hit {
     0% {
         transform: scale(1);
-        background-color: #6cb2f0;
+        background-color: var(--color-primary);
     }
     50% {
-        transform: scale(1.1);
+        transform: scale(1.3);
         background-color: #b3ffb3;
     }
     100% {
         transform: scale(1);
-        background-color: #6cb2f0;
+        background-color: var(--color-primary);
     }
 }
 
@@ -136,7 +199,7 @@
 @keyframes shipDestroyed {
     0% {
         transform: scale(1);
-        background-color: #6cb2f0;
+        background-color: var(--color-primary);
     }
     50% {
         transform: scale(1.2);
@@ -144,7 +207,7 @@
     }
     100% {
         transform: scale(1);
-        background-color: #6cb2f0;
+        background-color: var(--color-primary);
     }
 }
 
@@ -152,9 +215,41 @@
     animation: shipDestroyed 1s ease-in-out forwards;
 }
 
+.particle {
+    position: absolute;
+    width: 3px;
+    height: 9px;
+    background-color: var(--color-primary);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: rise 6s forwards, fade 4s forwards;
+}
+
+@keyframes rise {
+    0% {
+        transform: translateY(0px);
+    }
+    100% {
+        transform: translateY(-600px);
+    }
+}
+
+@keyframes fade {
+    0% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0;
+    }
+}
+
 @media screen and (max-width: 830px){
     .colLabel, .emptyCorner, .rowLabel, .cell {
         width: 30px;
         height: 30px
+    }
+
+    .boardWrapper {
+        flex-direction: column;
     }
 }

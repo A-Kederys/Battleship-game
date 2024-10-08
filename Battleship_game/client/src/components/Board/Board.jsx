@@ -26,6 +26,7 @@ function Board() {
     const [missedCells, setMissedCells] = useState([]);
     const [hitCells, setHitCells] = useState([]);
     const [destroyedShipCells, setDestroyedShipCells] = useState([]);
+    const [particles, setParticles] = useState([]); 
 
 
     useEffect(() => {
@@ -121,6 +122,17 @@ function Board() {
             );
             setGameStarted(false);
             setGameOver(true);
+
+            // particle effect
+            if (allShipsDestroyed) {
+                setCellsClickable(false);
+                createParticles();
+
+                setTimeout(() => {
+                    setIsButtonActive(true);
+                    setCellsClickable(true);
+                }, 6000);
+            }
           });
           
       }, []);
@@ -191,64 +203,98 @@ function Board() {
         }, 1500);
     };
 
+    const createParticles = () => {
+        const newParticles = [];
+        for (let i = 0; i < 100; i++) {
+            newParticles.push({
+                id: i,
+                left: Math.random() * 100 + '%',
+                top: Math.random() * 100 + '%',
+            });
+        }
+        setParticles(newParticles);
+
+        setTimeout(() => {
+            setParticles([]);
+        }, 6000); 
+    };
+
 
     return (
-        <div className={styles.boardContainer}>
-           {!gameStarted && !gameOver && (
-                <button onClick={handleStartGame} disabled={!isButtonActive}>
-                    Start Game
-                </button>
-            )}
-            {(gameStarted || gameOver) && (
-                <button onClick={handleRestartGame} disabled={!isButtonActive}>
-                    {gameOver ? "Play Again" : "Restart Game"}
-                </button>
-            )}
-            {/* column labels */}
-            <div className={styles.colLabels}>
-                <div className={styles.emptyCorner}></div>
-                {colLabels.map((label, index) => (
-                <div key={index} className={styles.colLabel}>
-                    {label}
-                </div>
-                ))}
+        <>
+        <h1 className={styles.title}>Aqua Strike!</h1>
+        <div className={styles.boardWrapper}>
+            <div className={styles.controlsContainer}>
+                <p>Remaining shots: {remainingTries}</p>
+                {!gameStarted && !gameOver && (
+                    <button onClick={handleStartGame} disabled={!isButtonActive}>
+                        Start Game
+                    </button>
+                )}
+                {(gameStarted || gameOver) && (
+                    <button onClick={handleRestartGame} disabled={!isButtonActive}>
+                        {gameOver ? "Play Again" : "Restart Game"}
+                    </button>
+                )}
             </div>
-
-             {/* grid */}
-            <div className={styles.gridContainer}>
-                {boardGrid.map((row, rowIndex) => (
-                    <div key={rowIndex} className={styles.row}>
-                        {/* row labels */}
-                        <div className={styles.rowLabel}>{rowLabels[rowIndex]}</div>
-                        {row.map((cell, colIndex) => {
-                            const isWaving = wavingCells.includes(`${rowIndex}-${colIndex}`);
-                            const isMissed = missedCells.includes(`${rowIndex}-${colIndex}`);
-                            const isHit = hitCells.includes(`${rowIndex}-${colIndex}`);
-                            const isDestroyed = destroyedShipCells.includes(`${rowIndex}-${colIndex}`);
-                            return (
-                                <div
-                                    key={colIndex}
-                                    className={`${styles.cell} 
-                                        ${isWaving ? styles.waving : ''} 
-                                        ${isMissed ? styles.distorted : ''} 
-                                        ${isHit ? styles.hitEffect : ''}
-                                        ${isDestroyed ? styles.shipDestroyedEffect : ''}`
-                                    }
-                                    onClick={() => {
-                                        handleTileClick(rowIndex, colIndex);
-                                    }}
-                                    style={{ pointerEvents: cellsClickable ? 'auto' : 'none' }}
-                                >
-                                    {cell}
-                                </div>
-                            );
-                        })}
+            <div className={styles.boardContainer}>
+                {/* column labels */}
+                <div className={styles.colLabels}>
+                    <div className={styles.emptyCorner}></div>
+                    {colLabels.map((label, index) => (
+                    <div key={index} className={styles.colLabel}>
+                        {label}
                     </div>
-                ))}
+                    ))}
+                </div>
+
+                {/* grid */}
+                <div className={styles.gridContainer}>
+                    {boardGrid.map((row, rowIndex) => (
+                        <div key={rowIndex} className={styles.row}>
+                            {/* row labels */}
+                            <div className={styles.rowLabel}>{rowLabels[rowIndex]}</div>
+                            {row.map((cell, colIndex) => {
+                                const isWaving = wavingCells.includes(`${rowIndex}-${colIndex}`);
+                                const isMissed = missedCells.includes(`${rowIndex}-${colIndex}`);
+                                const isHit = hitCells.includes(`${rowIndex}-${colIndex}`);
+                                const isDestroyed = destroyedShipCells.includes(`${rowIndex}-${colIndex}`);
+                                return (
+                                    <div
+                                        key={colIndex}
+                                        className={`${styles.cell} 
+                                            ${isWaving ? styles.waving : ''} 
+                                            ${isMissed ? styles.distorted : ''} 
+                                            ${isHit ? styles.hitEffect : ''}
+                                            ${isDestroyed ? styles.shipDestroyedEffect : ''}`
+                                        }
+                                        onClick={() => {
+                                            handleTileClick(rowIndex, colIndex);
+                                        }}
+                                        style={{ pointerEvents: cellsClickable ? 'auto' : 'none' }}
+                                    >
+                                        {cell}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ))}
+                </div>
             </div>
             <div className={styles.message}>{message}</div>
-            <div className={styles.message}>Remaining shots: {remainingTries}</div>
         </div>
+        {particles.map(particle => (
+                <div
+                    key={particle.id}
+                    className={styles.particle}
+                    style={{
+                        left: particle.left,
+                        top: particle.top,
+                        position: 'absolute'
+                    }}
+                />
+        ))}
+        </>
     );
 }
 
