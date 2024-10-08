@@ -22,6 +22,9 @@ function Board() {
     const [remainingTries, setRemainingTries] = useState(25);
     const [gameStarted, setGameStarted] = useState(false);
     const [gameOver, setGameOver] = useState(false);
+    const [wavingCells, setWavingCells] = useState([]);
+    const [isButtonActive, setIsButtonActive] = useState(true);
+    const [cellsClickable, setCellsClickable] = useState(true);
 
 
     useEffect(() => {
@@ -117,35 +120,77 @@ function Board() {
           setMessage("Start the game first!");
           return;
         }
+        if (!cellsClickable) {
+            return;
+        }
         console.log(`Clicked on ${colLabels[row]}${rowLabels[col]}`);
         socket.emit("playerGuess", { row, col }); // send guess to server
       };
 
       const handleStartGame = () => {
+        if (!isButtonActive) return;
+        setIsButtonActive(false);
+        setCellsClickable(false);
         socket.emit("gameStart");
         setGameStarted(true);
         setGameOver(false);
         setMessage("Game started!");
+
+        triggerWaveEffect();
+        
+        // re-enabling after 1500ms
+        setTimeout(() => {
+            setIsButtonActive(true);
+            setCellsClickable(true);
+        }, 1500);
       };
     
       const handleRestartGame = () => {
+        if (!isButtonActive) return;
+        setIsButtonActive(false);
+        setCellsClickable(false);
         socket.emit("restartGame");
-        setBoardGrid(Array.from({ length: 10 }, () => Array.from({ length: 10 }, () => "")));
-        setMessage("Game restarted! Make your shot.");
         setGameStarted(true);
         setGameOver(false);
+        setMessage("Game restarted! Make your shot.");
+
+        triggerWaveEffect();
+
+        // re-enabling after 1500ms
+        setTimeout(() => {
+            setIsButtonActive(true);
+            setCellsClickable(true);
+        }, 1500);
       };
+
+      const triggerWaveEffect = () => {
+        const newWavingCells = [];
+        
+        for (let row = 0; row < 10; row++) {
+            for (let col = 0; col < 10; col++) {
+                setTimeout(() => {
+                    newWavingCells.push(`${row}-${col}`);
+                    setWavingCells(prev => [...prev, `${row}-${col}`]);
+                }, (row + col) * 30);
+            }
+        }
+
+        // wave reset
+        setTimeout(() => {
+            setWavingCells([]);
+        }, 1500);
+    };
 
 
     return (
         <div className={styles.boardContainer}>
            {!gameStarted && !gameOver && (
-                <button onClick={handleStartGame}>
+                <button onClick={handleStartGame} disabled={!isButtonActive}>
                     Start Game
                 </button>
             )}
             {(gameStarted || gameOver) && (
-                <button onClick={handleRestartGame}>
+                <button onClick={handleRestartGame} disabled={!isButtonActive}>
                     {gameOver ? "Play Again" : "Restart Game"}
                 </button>
             )}
@@ -165,17 +210,21 @@ function Board() {
                     <div key={rowIndex} className={styles.row}>
                         {/* row labels */}
                         <div className={styles.rowLabel}>{rowLabels[rowIndex]}</div>
-                        {row.map((cell, colIndex) => (
-                            <div
-                            key={colIndex}
-                                className={styles.cell}
-                                onClick={() => {
-                                    handleTileClick(rowIndex, colIndex);
-                                }}
-                            >
-                            {cell}
-                        </div>
-                        ))}
+                        {row.map((cell, colIndex) => {
+                            const isWaving = wavingCells.includes(`${rowIndex}-${colIndex}`);
+                            return (
+                                <div
+                                    key={colIndex}
+                                    className={`${styles.cell} ${isWaving ? styles.waving : ''}`}
+                                    onClick={() => {
+                                        handleTileClick(rowIndex, colIndex);
+                                    }}
+                                    style={{ pointerEvents: cellsClickable ? 'auto' : 'none' }}
+                                >
+                                    {cell}
+                                </div>
+                            );
+                        })}
                     </div>
                 ))}
             </div>

@@ -73,6 +73,25 @@
     font-size: 25px;
 }
 
+@keyframes wave {
+    0% {
+        transform: scale(1);
+        background-color: #6cb2f0;
+    }
+    50% {
+        transform: scale(1.2);
+        background-color: #4ea3d1;
+    }
+    100% {
+        transform: scale(1);
+        background-color: #6cb2f0;
+    }
+}
+
+.waving {
+    animation: wave 0.5s ease-in-out forwards;
+}
+
 @media screen and (max-width: 830px){
     .colLabel, .emptyCorner, .rowLabel, .cell {
         width: 30px;
