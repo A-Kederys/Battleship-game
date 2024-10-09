@@ -62,6 +62,10 @@
     font-size: 25px;
 }
 
+.controlsContainer p {
+    max-width: 200px;
+}
+
 .message {
     margin-right: auto;
     max-width: 300px;

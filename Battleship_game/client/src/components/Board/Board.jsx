@@ -172,6 +172,10 @@ function Board() {
         if (!isButtonActive) return;
         setIsButtonActive(false);
         setCellsClickable(false);
+
+        setHitCells([]);
+        setMissedCells([]);
+
         socket.emit("restartGame");
         setGameStarted(true);
         setGameOver(false);
@@ -296,6 +300,8 @@ function Board() {
                 />
         ))}
         {/* game rules */}
+        {/* remaining ship count */}
+        {/* show where ships were after losing */}
         </>
     );
 }
