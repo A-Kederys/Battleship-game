@@ -1,5 +1,12 @@
 # Battleship game (vs computer)
 
+<table>
+    <tr>
+         <td><img src="showcase/demo1.gif" alt="Game start"/></td>
+         <td><img src="showcase/demo2.gif" alt="Game end"/></td>       
+    </tr>
+</table>
+
 ## Setup and Installation
 
 1. **Clone the Repository:**
