@@ -76,11 +76,11 @@
     flex-direction: column;
     gap: 20px;
     margin-right: auto;
-    max-width: 300px;
+    max-width: 370px;
 }
 
-.message p {
-    max-width: 200px;
+.message h4 {
+    height: 75px;
 }
 
 /* board */
@@ -276,7 +276,7 @@
     }
 
     .message {
-        max-width: 500px;
+        max-width: 700px;
         max-height: fit-content;
     }
 

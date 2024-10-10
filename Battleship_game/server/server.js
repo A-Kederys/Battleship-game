@@ -31,7 +31,9 @@ const initializeGame = () => {
   let gameOver = false;
   let remainingShips = shipPositions.length;
 
-  return { shipPositions, hitTiles, guessedTiles, remainingTries, gameOver, remainingShips };
+  const shipCountsByLength = { 1: 3, 2: 3, 3: 2, 4: 1, 5: 1 };
+
+  return { shipPositions, hitTiles, guessedTiles, remainingTries, gameOver, remainingShips, shipCountsByLength };
 };
 
 // socket connection handling
@@ -39,7 +41,7 @@ io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
 
   // Initialize the game state for the player
-  let { shipPositions, hitTiles, guessedTiles, remainingTries, gameOver, remainingShips } =
+  let { shipPositions, hitTiles, guessedTiles, remainingTries, gameOver, remainingShips, shipCountsByLength } =
     initializeGame();
 
   let gameStarted = false;
@@ -51,16 +53,18 @@ io.on("connection", (socket) => {
     console.log("Game started for:", socket.id);
     socket.emit("updateRemainingTries", remainingTries);
     socket.emit("updateRemainingShips", remainingShips);
+    socket.emit("updateShipCountsByLength", shipCountsByLength);
   });
 
   socket.on("restartGame", () => {
-    ({ shipPositions, hitTiles, guessedTiles, remainingTries, gameOver, remainingShips  } =
+    ({ shipPositions, hitTiles, guessedTiles, remainingTries, gameOver, remainingShips, shipCountsByLength  } =
       initializeGame()); // resetting game state
     socket.emit("gameStarted", { shipPositions });
     console.log("Ship position sent to client:", shipPositions)
     console.log("Game restarted for:", socket.id);
     socket.emit("updateRemainingTries", remainingTries);
     socket.emit("updateRemainingShips", remainingShips);
+    socket.emit("updateShipCountsByLength", shipCountsByLength);
   });
 
   socket.on("playerGuess", ({ row, col }) => {
@@ -102,6 +106,13 @@ io.on("connection", (socket) => {
         if (allTilesHit) {
           console.log(`Ship at ${JSON.stringify(ship)} destroyed`);
           socket.emit("shipDestroyed", ship);
+
+          // reducing count for the ship length that got destroyed
+          const shipLength = ship.length;
+          shipCountsByLength[shipLength] -= 1;
+          // sending updated ship counts to the client
+          socket.emit("updateShipCountsByLength", shipCountsByLength);
+
           remainingShips -= 1;
           socket.emit("updateRemainingShips", remainingShips);
           destroyedShip = true;

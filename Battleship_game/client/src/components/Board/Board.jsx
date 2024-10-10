@@ -19,6 +19,13 @@ function Board() {
     const [message, setMessage] = useState("Press the button to start the game");
     const [remainingTries, setRemainingTries] = useState(25);
     const [remainingShips, setRemainingShips] = useState(10);
+    const [remainingShipsByLength, setRemainingShipsByLength] = useState({
+        1: 3,
+        2: 3,
+        3: 2,
+        4: 1,
+        5: 1
+    });
     const [gameStarted, setGameStarted] = useState(false);
     const [gameOver, setGameOver] = useState(false);
     const [wavingCells, setWavingCells] = useState([]);
@@ -60,6 +67,10 @@ function Board() {
         // updating remaining ships when server sends the count
         socket.on("updateRemainingShips", (shipsLeft) => {
             setRemainingShips(shipsLeft);
+        });
+
+        socket.on("updateShipCountsByLength", (countsLeft) => {
+            setRemainingShipsByLength(countsLeft);
         });
 
         // listening for hit results from the server
@@ -181,6 +192,7 @@ function Board() {
 
         setHitCells([]);
         setMissedCells([]);
+        setDestroyedShipCells([]); 
 
         socket.emit("restartGame");
         setGameStarted(true);
@@ -297,7 +309,12 @@ function Board() {
                 </div>
             </div>
             <div className={styles.message}>
-                {message}
+                <h4>{message}</h4>
+                {Object.entries(remainingShipsByLength).map(([length, count]) => (
+                    count > 0 && (
+                        <p key={length}>{length}-cell length: {count}</p>
+                    )
+                ))}
             </div>
         </div>
         {particles.map(particle => (
