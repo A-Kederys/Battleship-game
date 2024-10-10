@@ -18,6 +18,7 @@ function Board() {
     const [shipPositions, setShipPositions] = useState([]);
     const [message, setMessage] = useState("Press the button to start the game");
     const [remainingTries, setRemainingTries] = useState(25);
+    const [remainingShips, setRemainingShips] = useState(10);
     const [gameStarted, setGameStarted] = useState(false);
     const [gameOver, setGameOver] = useState(false);
     const [wavingCells, setWavingCells] = useState([]);
@@ -54,6 +55,11 @@ function Board() {
         // updating remaining tries when server sends the count
         socket.on("updateRemainingTries", (triesLeft) => {
             setRemainingTries(triesLeft);
+        });
+
+        // updating remaining ships when server sends the count
+        socket.on("updateRemainingShips", (shipsLeft) => {
+            setRemainingShips(shipsLeft);
         });
 
         // listening for hit results from the server
@@ -230,7 +236,11 @@ function Board() {
         <h1 className={styles.title}>Aqua Strike!</h1>
         <div className={styles.boardWrapper}>
             <div className={styles.controlsContainer}>
-                <p>Remaining shots: {remainingTries}</p>
+                <h1>Remaining:</h1>
+                <p>Shots: {remainingTries}</p>
+                {remainingShips > 0 && (
+                    <p>Ships: {remainingShips}</p>
+                )}
                 {!gameStarted && !gameOver && (
                     <button onClick={handleStartGame} disabled={!isButtonActive}>
                         Start Game
@@ -286,7 +296,9 @@ function Board() {
                     ))}
                 </div>
             </div>
-            <div className={styles.message}>{message}</div>
+            <div className={styles.message}>
+                {message}
+            </div>
         </div>
         {particles.map(particle => (
                 <div

@@ -29,8 +29,9 @@ const initializeGame = () => {
   const guessedTiles = new Set(); // for tracking guesses
   let remainingTries = 25;
   let gameOver = false;
+  let remainingShips = shipPositions.length;
 
-  return { shipPositions, hitTiles, guessedTiles, remainingTries, gameOver };
+  return { shipPositions, hitTiles, guessedTiles, remainingTries, gameOver, remainingShips };
 };
 
 // socket connection handling
@@ -38,7 +39,7 @@ io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
 
   // Initialize the game state for the player
-  let { shipPositions, hitTiles, guessedTiles, remainingTries, gameOver } =
+  let { shipPositions, hitTiles, guessedTiles, remainingTries, gameOver, remainingShips } =
     initializeGame();
 
   let gameStarted = false;
@@ -49,15 +50,17 @@ io.on("connection", (socket) => {
     console.log("Ship position sent to client:", shipPositions)
     console.log("Game started for:", socket.id);
     socket.emit("updateRemainingTries", remainingTries);
+    socket.emit("updateRemainingShips", remainingShips);
   });
 
   socket.on("restartGame", () => {
-    ({ shipPositions, hitTiles, guessedTiles, remainingTries, gameOver } =
+    ({ shipPositions, hitTiles, guessedTiles, remainingTries, gameOver, remainingShips  } =
       initializeGame()); // resetting game state
     socket.emit("gameStarted", { shipPositions });
     console.log("Ship position sent to client:", shipPositions)
     console.log("Game restarted for:", socket.id);
     socket.emit("updateRemainingTries", remainingTries);
+    socket.emit("updateRemainingShips", remainingShips);
   });
 
   socket.on("playerGuess", ({ row, col }) => {
@@ -99,6 +102,8 @@ io.on("connection", (socket) => {
         if (allTilesHit) {
           console.log(`Ship at ${JSON.stringify(ship)} destroyed`);
           socket.emit("shipDestroyed", ship);
+          remainingShips -= 1;
+          socket.emit("updateRemainingShips", remainingShips);
           destroyedShip = true;
         }
         break;
