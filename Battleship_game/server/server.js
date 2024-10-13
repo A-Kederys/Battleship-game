@@ -139,7 +139,8 @@ io.on("connection", (socket) => {
     if (allShipsDestroyed || remainingTries <= 0) {
       console.log(`${socket.id} game over!`);
       gameOver = true;
-      socket.emit("gameOver", { allShipsDestroyed });
+      const unhitShipTiles = shipPositions.flat().filter(({ row, col }) => !hitTiles.has(`${row},${col}`));
+      socket.emit("gameOver", { allShipsDestroyed, unhitShipTiles });
     }
 
     socket.on("disconnect", () => {

@@ -20,11 +20,7 @@ function Board() {
     const [remainingTries, setRemainingTries] = useState(25);
     const [remainingShips, setRemainingShips] = useState(10);
     const [remainingShipsByLength, setRemainingShipsByLength] = useState({
-        1: 3,
-        2: 3,
-        3: 2,
-        4: 1,
-        5: 1
+        1: 3, 2: 3, 3: 2, 4: 1, 5: 1
     });
     const [gameStarted, setGameStarted] = useState(false);
     const [gameOver, setGameOver] = useState(false);
@@ -34,7 +30,9 @@ function Board() {
     const [missedCells, setMissedCells] = useState([]);
     const [hitCells, setHitCells] = useState([]);
     const [destroyedShipCells, setDestroyedShipCells] = useState([]);
-    const [particles, setParticles] = useState([]); 
+    const [particles, setParticles] = useState([]);
+    const [unHitCells, setUnhitCells] = useState([]);
+
 
 
     useEffect(() => {
@@ -131,14 +129,32 @@ function Board() {
           });
         
         // listening for game over event from the server
-        socket.on("gameOver", ({ allShipsDestroyed }) => {
+        socket.on("gameOver", ({ allShipsDestroyed, unhitShipTiles }) => {
             setMessage(
               allShipsDestroyed
                 ? "Congratulations! You destroyed all ships!"
-                : "No remaining tries left. Game Over!"
+                : <span className={styles.scaling}>No remaining shots left. Game Over!</span>
             );
             setGameStarted(false);
             setGameOver(true);
+
+            if (!allShipsDestroyed) {
+                const newUnhitCells = unhitShipTiles.map(({ row, col }) => `${row}-${col}`);
+                setUnhitCells(newUnhitCells);
+
+                setBoardGrid((prevGrid) => {
+                    const updatedBoardGrid = prevGrid.map((r) => [...r]);
+                    unhitShipTiles.forEach(({ row, col }) => {
+                        updatedBoardGrid[row][col] = (
+                            <>
+                                <div className={styles.unhitShipTile}></div>
+                                <span className={styles.emoji}>🚢</span>
+                            </>
+                        );
+                    });
+                    return updatedBoardGrid;
+                });
+            }
 
             // particle effect
             if (allShipsDestroyed) {
@@ -157,7 +173,7 @@ function Board() {
 
       const handleTileClick = (row, col) => {
         if (!gameStarted) {
-          setMessage("Start the game first!");
+          setMessage(<span className={styles.scaling}>Start the game first!</span>);
           return;
         }
         if (!cellsClickable) {
@@ -192,7 +208,7 @@ function Board() {
 
         setHitCells([]);
         setMissedCells([]);
-        setDestroyedShipCells([]); 
+        setUnhitCells([]);
 
         socket.emit("restartGame");
         setGameStarted(true);
@@ -216,7 +232,7 @@ function Board() {
                 setTimeout(() => {
                     newWavingCells.push(`${row}-${col}`);
                     setWavingCells(prev => [...prev, `${row}-${col}`]);
-                }, (row + col) * 30);
+                }, (row + col) * 60);
             }
         }
 
@@ -286,6 +302,7 @@ function Board() {
                                 const isMissed = missedCells.includes(`${rowIndex}-${colIndex}`);
                                 const isHit = hitCells.includes(`${rowIndex}-${colIndex}`);
                                 const isDestroyed = destroyedShipCells.includes(`${rowIndex}-${colIndex}`);
+                                const isUnhit = unHitCells.includes(`${rowIndex}-${colIndex}`);
                                 return (
                                     <div
                                         key={colIndex}
@@ -293,7 +310,8 @@ function Board() {
                                             ${isWaving ? styles.waving : ''} 
                                             ${isMissed ? styles.distorted : ''} 
                                             ${isHit ? styles.hitEffect : ''}
-                                            ${isDestroyed ? styles.shipDestroyedEffect : ''}`
+                                            ${isDestroyed ? styles.shipDestroyedEffect : ''}
+                                            ${isUnhit ? styles.unhitShipTile  : ''}`
                                         }
                                         onClick={() => {
                                             handleTileClick(rowIndex, colIndex);
@@ -328,9 +346,9 @@ function Board() {
                     }}
                 />
         ))}
-        {/* game rules */}
-        {/* remaining ship count */}
-        {/* show where ships were after losing */}
+        {/* future plans */}
+            {/* game rules */}
+            {/* best cells to hit */}
         </>
     );
 }
